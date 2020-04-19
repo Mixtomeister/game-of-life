@@ -3,9 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="src/css/style.css" />
-    <script src="src/js/game.js"></script>
+    <script type="module" src="src/js/game.js"></script>
     <title>Game of Life</title>
   </head>
-  <body></body>
+  <body>
+    <div id="control-panel">
+      <i id="btn-play" class="material-icons btn-control">play_arrow</i>
+      <i id="btn-next" class="material-icons btn-control">skip_next</i>
+    </div>
+    <canvas id="game"></canvas>
+  </body>
 </html>

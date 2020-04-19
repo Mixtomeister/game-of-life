@@ -1,53 +1,104 @@
 const CELL_SIZE = 15;
 const LINE_COLOR = "#FFF";
 let cellsAlive = [];
+let pause = true;
 
 window.onload = () => {
-  const canvas = document.createElement("canvas");
+  setCanvasSize(document.body.clientWidth, document.body.clientHeight);
+  renderGrid(document.getElementById("game").getContext("2d"));
+  setListenersGamePaused();
+};
 
-  canvas.id = "game";
-  canvas.width = document.body.clientWidth;
-  canvas.height = document.body.clientHeight;
+function setCanvasSize(width, height) {
+  const canvas = document.getElementById("game");
 
-  document.body.appendChild(canvas);
+  canvas.width = width;
+  canvas.height = height;
+}
 
-  const ctx = canvas.getContext("2d");
-
-  renderGrid(ctx);
-
-  canvas.onclick = ({ clientX, clientY }) => {
-    const x = Math.trunc(clientX / CELL_SIZE) * CELL_SIZE;
-    const y = Math.trunc(clientY / CELL_SIZE) * CELL_SIZE;
-
-    cellsAlive.push([x, y]);
-
-    ctx.fillStyle = LINE_COLOR;
-    ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
-  };
+function setListenersGamePaused() {
+  const btnPlay = document.getElementById("btn-play");
+  const btnNext = document.getElementById("btn-next");
 
   document.body.onkeyup = (e) => {
     if (e.keyCode == 32) {
-      canvas.onclick = undefined;
       startGame();
     }
   };
-};
+
+  document.getElementById("game").onclick = ({ clientX, clientY }) => {
+    const ctx = document.getElementById("game").getContext("2d");
+    const x = Math.trunc(clientX / CELL_SIZE) * CELL_SIZE;
+    const y = Math.trunc(clientY / CELL_SIZE) * CELL_SIZE;
+    const strCell = JSON.stringify([x, y]);
+
+    console.log(cellsAlive);
+
+    if (!cellsAlive.includes(strCell)) {
+      cellsAlive.push(strCell);
+    } else {
+      cellsAlive = cellsAlive.filter((cell) => cell !== strCell);
+    }
+
+    renderGrid(ctx);
+    renderRects(ctx);
+  };
+
+  btnPlay.onclick = () => startGame();
+  btnNext.onclick = () => {
+    requestAnimationFrame(gameLoop);
+  };
+
+  btnPlay.replaceChild(
+    document.createTextNode("play_arrow"),
+    btnPlay.childNodes[0]
+  );
+  btnNext.replaceChild(
+    document.createTextNode("skip_next"),
+    btnNext.childNodes[0]
+  );
+}
+
+function setListenersGameRunning() {
+  const btnPlay = document.getElementById("btn-play");
+  const btnNext = document.getElementById("btn-next");
+
+  btnPlay.onclick = () => (pause = true);
+  btnNext.onclick = undefined;
+  document.getElementById("game").onclick = undefined;
+  document.body.onkeyup = (e) => {
+    if (e.keyCode == 32) {
+      pause = true;
+    }
+  };
+
+  btnPlay.replaceChild(document.createTextNode("pause"), btnPlay.childNodes[0]);
+  btnNext.replaceChild(document.createTextNode(""), btnNext.childNodes[0]);
+}
 
 function startGame() {
+  setListenersGameRunning();
+  pause = false;
   requestAnimationFrame(gameLoop);
 }
 
 function gameLoop() {
   const newCells = [];
   const ctx = document.getElementById("game").getContext("2d");
-  let cellsToCheck = [].concat(cellsAlive);
+  let cellsToCheck;
 
-  cellsAlive.forEach((cell) =>
-    getNeighbors(cell[0], cell[1]).forEach((nei) => cellsToCheck.push(nei))
-  );
+  cellsAlive = [...new Set(cellsAlive)];
+  cellsToCheck = [].concat(cellsAlive);
 
-  cellsAlive = [...new Set(cellsAlive.map(JSON.stringify))];
-  cellsToCheck = [...new Set(cellsToCheck.map(JSON.stringify))];
+  cellsAlive.forEach((strCell) => {
+    const cell = JSON.parse(strCell);
+    getNeighbors(cell[0], cell[1]).forEach((nei) =>
+      cellsToCheck.push(JSON.stringify(nei))
+    );
+  });
+
+  cellsToCheck = [...new Set(cellsToCheck)];
+
   cellsToCheck.forEach((strCell) => {
     const cell = JSON.parse(strCell);
     let aliveCount = 0;
@@ -56,9 +107,11 @@ function gameLoop() {
     );
 
     if (cellsAlive.includes(strCell)) {
-      aliveCount >= 2 && aliveCount <= 3 ? newCells.push(cell) : null;
+      aliveCount >= 2 && aliveCount <= 3
+        ? newCells.push(JSON.stringify(cell))
+        : null;
     } else {
-      aliveCount == 3 ? newCells.push(cell) : null;
+      aliveCount == 3 ? newCells.push(JSON.stringify(cell)) : null;
     }
   });
 
@@ -66,32 +119,28 @@ function gameLoop() {
 
   renderGrid(ctx);
   renderRects(ctx);
-  requestAnimationFrame(gameLoop);
+
+  !pause ? requestAnimationFrame(gameLoop) : setListenersGamePaused();
 }
 
 function renderGrid(ctx) {
-  const cols = [0];
-  const rows = [0];
-
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
   ctx.strokeStyle = LINE_COLOR;
   ctx.lineWidth = 0.4;
 
-  for (i = CELL_SIZE; i < ctx.canvas.width; i += CELL_SIZE) {
+  for (let i = CELL_SIZE; i < ctx.canvas.width; i += CELL_SIZE) {
     ctx.beginPath();
     ctx.moveTo(i, 0);
     ctx.lineTo(i, ctx.canvas.height);
     ctx.stroke();
-    cols.push(i);
   }
 
-  for (i = CELL_SIZE; i < ctx.canvas.height; i += CELL_SIZE) {
+  for (let i = CELL_SIZE; i < ctx.canvas.height; i += CELL_SIZE) {
     ctx.beginPath();
     ctx.moveTo(0, i);
     ctx.lineTo(ctx.canvas.width, i);
     ctx.stroke();
-    rows.push(i);
   }
 }
 
@@ -109,7 +158,8 @@ function getNeighbors(x, y) {
 }
 
 function renderRects(ctx) {
-  cellsAlive.forEach((cell) => {
+  cellsAlive.forEach((strCell) => {
+    const cell = JSON.parse(strCell);
     ctx.fillStyle = LINE_COLOR;
     ctx.fillRect(cell[0], cell[1], CELL_SIZE, CELL_SIZE);
   });
