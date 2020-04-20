@@ -38,3 +38,7 @@ body {
 .btn-control:hover {
   cursor: pointer;
 }
+
+#btn-refresh {
+  margin: 0px 10px 0px 25px;
+}

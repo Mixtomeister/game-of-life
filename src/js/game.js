@@ -1,7 +1,8 @@
 const CELL_SIZE = 15;
 const LINE_COLOR = "#FFF";
-let cellsAlive = [];
-let pause = true;
+let cellsAlive = [],
+  pause = true,
+  loops = 0;
 
 window.onload = () => {
   setCanvasSize(document.body.clientWidth, document.body.clientHeight);
@@ -19,6 +20,7 @@ function setCanvasSize(width, height) {
 function setListenersGamePaused() {
   const btnPlay = document.getElementById("btn-play");
   const btnNext = document.getElementById("btn-next");
+  const btnRefresh = document.getElementById("btn-refresh");
 
   document.body.onkeyup = (e) => {
     if (e.keyCode == 32) {
@@ -31,8 +33,6 @@ function setListenersGamePaused() {
     const x = Math.trunc(clientX / CELL_SIZE) * CELL_SIZE;
     const y = Math.trunc(clientY / CELL_SIZE) * CELL_SIZE;
     const strCell = JSON.stringify([x, y]);
-
-    console.log(cellsAlive);
 
     if (!cellsAlive.includes(strCell)) {
       cellsAlive.push(strCell);
@@ -48,6 +48,12 @@ function setListenersGamePaused() {
   btnNext.onclick = () => {
     requestAnimationFrame(gameLoop);
   };
+  btnRefresh.onclick = () => {
+    pause = true;
+    cellsAlive = [];
+    loops = -1;
+    requestAnimationFrame(gameLoop);
+  };
 
   btnPlay.replaceChild(
     document.createTextNode("play_arrow"),
@@ -57,14 +63,21 @@ function setListenersGamePaused() {
     document.createTextNode("skip_next"),
     btnNext.childNodes[0]
   );
+  btnRefresh.replaceChild(
+    document.createTextNode("refresh"),
+    btnRefresh.childNodes[0]
+  );
 }
 
 function setListenersGameRunning() {
   const btnPlay = document.getElementById("btn-play");
   const btnNext = document.getElementById("btn-next");
+  const btnRefresh = document.getElementById("btn-refresh");
 
   btnPlay.onclick = () => (pause = true);
   btnNext.onclick = undefined;
+  btnRefresh.onclick = undefined;
+
   document.getElementById("game").onclick = undefined;
   document.body.onkeyup = (e) => {
     if (e.keyCode == 32) {
@@ -74,6 +87,10 @@ function setListenersGameRunning() {
 
   btnPlay.replaceChild(document.createTextNode("pause"), btnPlay.childNodes[0]);
   btnNext.replaceChild(document.createTextNode(""), btnNext.childNodes[0]);
+  btnRefresh.replaceChild(
+    document.createTextNode(""),
+    btnRefresh.childNodes[0]
+  );
 }
 
 function startGame() {
@@ -85,6 +102,7 @@ function startGame() {
 function gameLoop() {
   const newCells = [];
   const ctx = document.getElementById("game").getContext("2d");
+  const gameCounter = document.getElementById("game-counter");
   let cellsToCheck;
 
   cellsAlive = [...new Set(cellsAlive)];
@@ -116,6 +134,11 @@ function gameLoop() {
   });
 
   cellsAlive = newCells;
+
+  gameCounter.replaceChild(
+    document.createTextNode(++loops),
+    gameCounter.childNodes[0]
+  );
 
   renderGrid(ctx);
   renderRects(ctx);
