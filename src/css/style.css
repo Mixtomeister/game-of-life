@@ -39,6 +39,7 @@ body {
   cursor: pointer;
 }
 
-#btn-refresh {
-  margin: 0px 10px 0px 25px;
+#btn-refresh,
+#btn-draw-mode {
+  margin: 0px 5px 0px 25px;
 }

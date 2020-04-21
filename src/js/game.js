@@ -2,7 +2,9 @@ const CELL_SIZE = 15;
 const LINE_COLOR = "#FFF";
 let cellsAlive = [],
   pause = true,
-  loops = 0;
+  loops = 0,
+  isMouseDown = false,
+  isDrawMode = true;
 
 window.onload = () => {
   setCanvasSize(document.body.clientWidth, document.body.clientHeight);
@@ -21,6 +23,8 @@ function setListenersGamePaused() {
   const btnPlay = document.getElementById("btn-play");
   const btnNext = document.getElementById("btn-next");
   const btnRefresh = document.getElementById("btn-refresh");
+  const btnDrawMode = document.getElementById("btn-draw-mode");
+  const game = document.getElementById("game");
 
   document.body.onkeyup = (e) => {
     if (e.keyCode == 32) {
@@ -28,21 +32,12 @@ function setListenersGamePaused() {
     }
   };
 
-  document.getElementById("game").onclick = ({ clientX, clientY }) => {
-    const ctx = document.getElementById("game").getContext("2d");
-    const x = Math.trunc(clientX / CELL_SIZE) * CELL_SIZE;
-    const y = Math.trunc(clientY / CELL_SIZE) * CELL_SIZE;
-    const strCell = JSON.stringify([x, y]);
-
-    if (!cellsAlive.includes(strCell)) {
-      cellsAlive.push(strCell);
-    } else {
-      cellsAlive = cellsAlive.filter((cell) => cell !== strCell);
-    }
-
-    renderGrid(ctx);
-    renderRects(ctx);
+  game.onmousedown = (e) => {
+    isMouseDown = true;
+    onCellClick(e);
   };
+  game.onmouseup = () => (isMouseDown = false);
+  game.onmousemove = onCellClick;
 
   btnPlay.onclick = () => startGame();
   btnNext.onclick = () => {
@@ -53,6 +48,10 @@ function setListenersGamePaused() {
     cellsAlive = [];
     loops = -1;
     requestAnimationFrame(gameLoop);
+  };
+  btnDrawMode.onclick = () => {
+    isDrawMode = !isDrawMode;
+    renderBtnDrawMode();
   };
 
   btnPlay.replaceChild(
@@ -67,18 +66,26 @@ function setListenersGamePaused() {
     document.createTextNode("refresh"),
     btnRefresh.childNodes[0]
   );
+
+  renderBtnDrawMode();
 }
 
 function setListenersGameRunning() {
   const btnPlay = document.getElementById("btn-play");
   const btnNext = document.getElementById("btn-next");
   const btnRefresh = document.getElementById("btn-refresh");
+  const btnDrawMode = document.getElementById("btn-draw-mode");
+  const lblDrawMode = document.getElementById("lbl-draw-mode");
+  const game = document.getElementById("game");
 
   btnPlay.onclick = () => (pause = true);
   btnNext.onclick = undefined;
   btnRefresh.onclick = undefined;
+  btnDrawMode.onclick = undefined;
 
-  document.getElementById("game").onclick = undefined;
+  game.onmousedown = undefined;
+  game.onmouseup = undefined;
+  game.onmousemove = undefined;
   document.body.onkeyup = (e) => {
     if (e.keyCode == 32) {
       pause = true;
@@ -90,6 +97,14 @@ function setListenersGameRunning() {
   btnRefresh.replaceChild(
     document.createTextNode(""),
     btnRefresh.childNodes[0]
+  );
+  btnDrawMode.replaceChild(
+    document.createTextNode(""),
+    btnDrawMode.childNodes[0]
+  );
+  lblDrawMode.replaceChild(
+    document.createTextNode(""),
+    lblDrawMode.childNodes[0]
   );
 }
 
@@ -186,4 +201,41 @@ function renderRects(ctx) {
     ctx.fillStyle = LINE_COLOR;
     ctx.fillRect(cell[0], cell[1], CELL_SIZE, CELL_SIZE);
   });
+}
+
+function onCellClick({ clientX, clientY }) {
+  if (isMouseDown) {
+    const ctx = document.getElementById("game").getContext("2d");
+    const x = Math.trunc(clientX / CELL_SIZE) * CELL_SIZE;
+    const y = Math.trunc(clientY / CELL_SIZE) * CELL_SIZE;
+    const strCell = JSON.stringify([x, y]);
+
+    if (isDrawMode) {
+      if (!cellsAlive.includes(strCell)) {
+        cellsAlive.push(strCell);
+        renderGrid(ctx);
+        renderRects(ctx);
+      }
+    } else {
+      if (cellsAlive.includes(strCell)) {
+        cellsAlive = cellsAlive.filter((cell) => cell !== strCell);
+        renderGrid(ctx);
+        renderRects(ctx);
+      }
+    }
+  }
+}
+
+function renderBtnDrawMode() {
+  const btnDrawMode = document.getElementById("btn-draw-mode");
+  const lblDrawMode = document.getElementById("lbl-draw-mode");
+
+  btnDrawMode.replaceChild(
+    document.createTextNode(isDrawMode ? "clear" : "create"),
+    btnDrawMode.childNodes[0]
+  );
+  lblDrawMode.replaceChild(
+    document.createTextNode(isDrawMode ? "Eraser mode" : "Draw mode"),
+    lblDrawMode.childNodes[0]
+  );
 }
